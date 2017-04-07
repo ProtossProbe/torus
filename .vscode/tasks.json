@@ -1,0 +1,18 @@
+{
+    "version": "0.1.0",
+    "command": "sh",
+    "isShellCommand": true,
+    "showOutput": "always",
+    "suppressTaskName": true,
+    "tasks": [{
+            "taskName": "build",
+            "args": ["-c", "clang-omp++ -fopenmp -std=c++14 -Wall -Wextra -pedantic -pthread src/torus.cpp src/gauss_legendre.c && ./a.out"],
+            "isBuildCommand": true
+        },
+        {
+            "taskName": "run",
+            "args": ["./a.out"],
+            "isTestCommand": true
+        }
+    ]
+}
