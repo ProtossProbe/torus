@@ -391,9 +391,9 @@ int main(int argc, const char *argv[])
     //  上面这些代码是计算角动量变化带来的周期轨道分叉的
 
     cout << setprecision(12) << endl
-         << potential_func(0.7, 0.01) << endl;
+         << potential_func(1.5, 0.0) << endl;
     cout << setprecision(12) << endl
-         << potential_func2(0.7, 0.01) << endl;
+         << potential_func2(1.5, 0.0) << endl;
 
     //    cout <<endl<<"Time:"<< float( omp_get_wtime() - begin_time ) << endl;
     //    cout << endl << "Cpu Time: " << static_cast<double>(clock() - start)/CLOCKS_PER_SEC << endl;
@@ -415,6 +415,8 @@ void run(int i, double r, double r_dot, double hamilton, string dotfile)
     double r_1 = r;
 
     double E = hamilton;
+
+
 
     //        outputFile.open(filename);
     dt = step;
@@ -626,7 +628,7 @@ double func2(double theta, void *params)
     r = abs(r);
 
     double R1, p, q, k, k_p, z, phi, result;
-    int sgn;
+    int sgn = 0;
     R1 = 1 + r0 * cos(theta);
     z = x3 - r0 * sin(theta);
 

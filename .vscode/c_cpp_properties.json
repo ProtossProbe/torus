@@ -3,8 +3,8 @@
             "name": "Mac",
             "includePath": [
                 "/usr/include",
-                "/usr/local/Cellar/boost/1.63.0/include",
                 "/usr/local/include",
+                "/usr/local/Cellar/boost/1.63.0/include",
                 "/usr/local/Cellar/libiomp/20150701/include"
             ],
             "browse": {
