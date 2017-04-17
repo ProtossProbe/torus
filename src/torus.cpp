@@ -23,6 +23,7 @@
 using namespace std;
 using namespace boost::math;
 using namespace boost::numeric::odeint;
+using namespace Elliptic_Integral;
 
 class Torus
 {
@@ -265,6 +266,9 @@ int main()
     // cout << setprecision(15) << temp << endl;
     // temp = torus1.potential(par1.r, par1.z, 'b');
     // cout << setprecision(15) << temp << endl;
-    double m = 0.94;
-    cout << setprecision(15) << Elliptic_Integral::ceik(m * m) - ellint_1(m) << endl;
+    // double m = 0.94;
+    // cout << setprecision(15) << ceik(m * m) - ellint_1(m) << endl;
+
+	container cc = zonal_toroidal_harmonics(1.5,1024);
+	cout << setprecision(20) << cc[1024][1] << endl;
 }

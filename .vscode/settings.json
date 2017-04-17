@@ -38,6 +38,7 @@
         "utility": "cpp",
         "typeinfo": "cpp",
         "valarray": "cpp",
-        "elliptic_integral": "cpp"
+        "elliptic_integral": "cpp",
+        "vector": "cpp"
     }
 }

@@ -1,6 +1,9 @@
 # Ignore `bin` dir
 */bin/*
 
+# Ignore bin
+bin
+
 # Prerequisites
 *.d
 
@@ -33,3 +36,4 @@
 *.exe
 *.out
 *.app
+

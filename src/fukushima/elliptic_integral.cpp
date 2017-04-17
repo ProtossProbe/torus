@@ -1,8 +1,12 @@
 #include <iostream>
 #include <cmath>
 #include "elliptic_integral.hpp"
+#include "../torus.hpp"
+#include <vector>
+#include <boost/array.hpp>
 
 using namespace std;
+
 namespace Elliptic_Integral
 {
 double ceik(double m)
@@ -434,4 +438,50 @@ double ceis(double m)
         terminate();
     }
 }
+
+container zonal_toroidal_harmonics_scale(double u, size_t iter)
+{
+    array_4 f_seed = zonal_toroidal_harmonics_seed(u);
+    array_2 f0 = {f_seed[0], f_seed[2]};
+    array_2 f1 = {f_seed[1], f_seed[3]};
+    container result = {f0, f1};
+
+    double t, a, b, d, f, f_p;
+    t = 1 / (4 * u * u);
+
+    for (size_t n = 1; n < iter; n++)
+    {
+        d = 1. / (2 * n + 1);
+        a = 1 + 2 * d;
+        b = 1 - d;
+        f = a * (b * result[n][0] - t * result[n - 1][0]);
+        f_p = a * (b * result[n][1] - t * (result[n - 1][1] - 8 * u * t * result[n - 1][0]));
+        result.push_back({f,f_p});
+    }
+
+    return result;
+}
+
+array_4 zonal_toroidal_harmonics_seed(double u)
+{
+    double co, v, w, m, p_minus, p_plus, dp_minus, dp_plus;
+    co = (2 / pi);
+    v = sqrt(u * u - 1);
+    w = 1 / (sqrt(u + v));
+    m = 2 * v / (u + v);
+    p_minus = co * w * ceik(m);
+    p_plus = co * ceie(m) / w;
+    dp_minus = -co * pow(w, 3) * ceis(m);
+    dp_plus = co * (w * ceib(m) - pow(w, 5) * ceis(m));
+
+    double f0, f1, f0_p, f1_p;
+    f0 = sqrt(2 / u) * p_minus;
+    f1 = 3 / sqrt(2 * pow(u, 3)) * p_plus;
+    f0_p = sqrt(2 / u) * dp_minus - f0 / (2 * u);
+    f1_p = 3 / sqrt(2 * pow(u, 3)) * dp_plus - 3 / (2 * u) * f1;
+
+    return {f0, f1, f0_p, f1_p};
+}
+
+
 }
