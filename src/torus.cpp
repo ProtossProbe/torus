@@ -17,6 +17,7 @@
 #include <boost/numeric/odeint.hpp>
 #include <gsl/gsl_integration.h>
 #include <quadpackpp/workspace.hpp>
+#include "fukushima/elliptic_integral.hpp"
 #include "torus.hpp"
 
 using namespace std;
@@ -34,6 +35,10 @@ class Torus
 
     double potential(const double r, const double x3, char method = 'a')
     {
+	// Two different ways to calculate the potential of a torus.
+	// method 'a' use a single quadrature and has high accuracy and efficiency.
+	// method 'b' use a double quadrature and its accuracy and efficiency is low.
+
 	double result;
 	switch (method)
 	{
@@ -49,6 +54,17 @@ class Torus
 	}
 	}
 	return result;
+    }
+
+    void test()
+    {
+	double r = 1.25, z = 0.0;
+	struct f_params params
+	{
+	    r, z, r0
+	};
+	cout
+	    << "value: " << func_single_quad(asin(z / r0), &params) << endl;
     }
 
   private:
@@ -71,7 +87,7 @@ class Torus
 		r, x3, r0
 	    };
 	    Function<double, void> F(func_single_quad, &params);
-	    u_p = quadrature(F, 0, 2 * pi, 'a');
+	    u_p = quadrature(F, 0, 2 * pi, 'b');
 	}
 	return u_p;
     }
@@ -93,8 +109,11 @@ class Torus
 	p = sqrt(pow((R1 + r), 2) + z * z);
 	q = sqrt(pow((R1 - r), 2) + z * z);
 	k = 2 / p * sqrt(r * R1);
+
 	k_p = sqrt(1 - k * k);
 	phi = asin(abs(z) / q);
+
+	// cout << setprecision(15) << "k: " << k << endl;
 
 	ei1 = ellint_1(k);
 	ei2 = ellint_2(k);
@@ -123,7 +142,7 @@ class Torus
 	    abs(r), x3, r0
 	};
 	Function<double, void> F(func_double_quad, &params);
-	return quadrature(F, -r0, r0, 'b') / (pi * pi * r0 * r0);
+	return quadrature(F, -r0, r0, 'c') / (pi * pi * r0 * r0);
     }
 
     static double func_double_quad(double eta, void *params)
@@ -139,7 +158,7 @@ class Torus
 
 	Function<double, void> F(func_double_quad2, &params2);
 	double lim = sqrt(r0 * r0 - eta * eta);
-	return quadrature(F, -lim, lim, 'b');
+	return quadrature(F, -lim, lim, 'c');
     }
 
     static double func_double_quad2(double zeta, void *params)
@@ -152,14 +171,14 @@ class Torus
 
     static double quadrature(Function<double, void> F, double low, double top, char method = 'a')
     {
-	double result, abserr, epsabs = 1e-10;
+	double result, abserr, epsabs = 1e-10, epsrel = 0;
 	switch (method)
 	{
 	case 'a':
 	{
+		//do the quadrature with quadpackpp.
 	    size_t limit = 128, m_deg = 10;
 	    Workspace<double> Work(limit, m_deg);
-	    double epsrel = 0;
 	    int status = 0;
 	    try
 	    {
@@ -174,11 +193,32 @@ class Torus
 	}
 	case 'b':
 	{
+		//do the quadrature with gsl_integration.
 	    gsl_integration_workspace *w = gsl_integration_workspace_alloc(5000);
 	    gsl_function Func;
 	    Func.function = F.function_;
 	    Func.params = F.params_;
-	    gsl_integration_qags(&Func, low, top, 0, epsabs, 5000,
+
+	    struct f_params *value = (struct f_params *)Func.params;
+	    double r0 = value->r0, x3 = value->x3;
+	    double singular = asin(x3 / r0);
+	    double pts[] = {low, singular, top};
+	    size_t npts = 3;
+
+	    gsl_integration_qagp(&Func, pts, npts, epsabs, epsrel, 5000,
+				 w, &result, &abserr);
+	    gsl_integration_workspace_free(w);
+	    break;
+	}
+	case 'c':
+	{
+		//do the quadrature with gsl_integration but it's for double integral.
+	    epsabs = 1e-8;
+	    gsl_integration_workspace *w = gsl_integration_workspace_alloc(5000);
+	    gsl_function Func;
+	    Func.function = F.function_;
+	    Func.params = F.params_;
+	    gsl_integration_qags(&Func, low, top, epsabs, epsrel, 5000,
 				 w, &result, &abserr);
 	    gsl_integration_workspace_free(w);
 	    break;
@@ -219,8 +259,12 @@ class Particle
 
 int main()
 {
-    Torus torus1;
-    Particle par1({1.5, 0.01, 3, 4, 5});
-    double temp = torus1.potential(par1.r, par1.z, 'b');
-    cout << setprecision(15) << temp << endl;
+    // Torus torus1;
+    // Particle par1({1.25, 0.001, 3, 4, 5});
+    // double temp = torus1.potential(par1.r, par1.z, 'a');
+    // cout << setprecision(15) << temp << endl;
+    // temp = torus1.potential(par1.r, par1.z, 'b');
+    // cout << setprecision(15) << temp << endl;
+    double m = 0.99;
+    cout << setprecision(15) << Elliptic_Integral::ceik(m * m) - ellint_1(m) << endl;
 }

@@ -6,12 +6,12 @@
     "suppressTaskName": true,
     "tasks": [{
             "taskName": "build",
-            "args": ["-c", "clang-omp++ -fopenmp -std=c++14 -Wall -Wno-missing-braces -Wno-unused-variable -Wno-unused-parameter -Wextra -pthread -lgsl -lgslcblas -lm -o run src/torus.cpp && ./run"],
+            "args": ["-c", "clang-omp++ -fopenmp -std=c++14 -Wall -Wno-missing-braces -Wno-unused-variable -Wno-unused-parameter -Wextra -pthread -lgsl -lgslcblas -lm -o ./bin/run src/torus.cpp && ./bin/run"],
             "isBuildCommand": true
         },
         {
             "taskName": "run",
-            "args": ["./run"],
+            "args": ["./bin/run"],
             "isTestCommand": true
         }
     ]

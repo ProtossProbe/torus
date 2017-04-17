@@ -1,5 +1,5 @@
 //
-//  torus_gravity.h
+//  torus.hpp
 //  
 //
 //  Created by Protoss Probe on 2017/04/09.
@@ -8,7 +8,6 @@
 
 #ifndef _TORUS_HPP_
 #define _TORUS_HPP_
-
 
 #include <iostream>
 #include <boost/array.hpp>
@@ -19,6 +18,7 @@
 #include <boost/math/special_functions/ellint_3.hpp>
 #include <boost/math/special_functions/heuman_lambda.hpp>
 #include <gsl/gsl_integration.h>
+#include "fukushima/elliptic_integral.hpp"
 #include "torus.hpp"
 
 typedef boost::array<double, 2> pos;

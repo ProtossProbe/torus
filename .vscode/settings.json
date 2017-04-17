@@ -37,6 +37,7 @@
         "type_traits": "cpp",
         "utility": "cpp",
         "typeinfo": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "elliptic_integral": "cpp"
     }
 }
