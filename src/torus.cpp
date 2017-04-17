@@ -265,6 +265,6 @@ int main()
     // cout << setprecision(15) << temp << endl;
     // temp = torus1.potential(par1.r, par1.z, 'b');
     // cout << setprecision(15) << temp << endl;
-    double m = 0.99;
+    double m = 0.95;
     cout << setprecision(15) << Elliptic_Integral::ceik(m * m) - ellint_1(m) << endl;
 }
