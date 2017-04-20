@@ -13,16 +13,20 @@
 #include <boost/math/special_functions/ellint_1.hpp>
 #include <boost/math/special_functions/ellint_2.hpp>
 #include <boost/math/special_functions/ellint_3.hpp>
-#include <boost/math/special_functions/heuman_lambda.hpp>
 #include <boost/numeric/odeint.hpp>
 #include <gsl/gsl_integration.h>
 #include <quadpackpp/workspace.hpp>
+
+#define EIGEN_STACK_ALLOCATION_LIMIT 1000000
+#include <eigen3/Eigen/Dense>
+#include <fftw3.h>
 #include "fukushima/elliptic_integral.hpp"
 #include "torus.hpp"
 
 using namespace std;
 using namespace boost::math;
 using namespace boost::numeric::odeint;
+using namespace Eigen;
 using namespace Elliptic_Integral;
 
 class Torus
@@ -33,8 +37,105 @@ class Torus
     Torus(double r0) : r0(r0) {}
     Torus(double r0, double R0) : r0(r0), R0(R0) {}
     const double r0 = 0.25, R0 = 1.0;
+    const double R1u = R0 - r0, R2u = R0 + r0;
+    const double au = sqrt(R0 * R0 - r0 * r0);
+    const double ubu = R0 / r0;
+    double ur = 1.6;
 
-    double potential(const double r, const double x3, char method = 'a')
+    static const size_t Ns = 256;
+    typedef Matrix<double, Ns, 1> sample_vec;
+    typedef Matrix<double, Ns, Ns> sample_mat;
+
+    pos r2u(const pos rz)
+    {
+	return {utr(rz[0], rz[1], au), thetatr(rz[0], rz[1], au)};
+    }
+
+    pos u2r(const pos ut)
+    {
+	return {rto(ut[0], ut[1], au), zto(ut[0], ut[1], au)};
+    }
+
+    void sampling()
+    {
+	double theta, v;
+	sample_vec t;
+	for (size_t i = 1; i <= Ns; i++)
+	{
+	    theta = (2 * i - 1) * pi / (2 * Ns);
+	    v = potential_ut(ur, theta) / sqrt(dto(ur, theta)) * (-au);
+	    thetalist(i - 1) = theta;
+	    vlist(i - 1) = v;
+	    for (size_t j = 0; j < Ns; j++)
+	    {
+		t(j) = cos(j * theta);
+	    }
+	    tlist.row(i - 1) = t;
+	}
+	// cout << "theta: " << endl
+	//      << thetalist << endl
+	//      << "v: " << endl
+	//      << vlist << endl
+	//      << "t: " << endl
+	//      << tlist << endl;
+    }
+
+    void dct()
+    {
+	clist = tlist.colPivHouseholderQr().solve(vlist);
+
+	// vector<double> a;
+	// double* p = &a[0];
+	// for (size_t i = 0; i < Ns; i++)
+	// {
+	//     a.push_back(vlist(i));
+	// }
+	// fftw_plan plan = fftw_plan_r2r_1d(Ns, p, p, FFTW_REDFT10, FFTW_ESTIMATE);
+	// fftw_execute(plan);
+	// for (size_t i = 0; i < Ns; i++)
+	// {
+	//     cout << setprecision(15) << clist(i) << '\t' << a[i] << endl;
+	// }
+
+	// cout << "c: " << endl
+	//      << clist;
+    }
+    void legendre_ratio(const double u, const size_t n)
+    {
+	plist = Elliptic_Integral::ratio_p(u, ur, n);
+    }
+
+    double potential_harmonics_ut(const double u, const double theta, const size_t n)
+    {
+	legendre_ratio(u, n);
+	double result = 0;
+	for (size_t i = 0; i < n; i++)
+	{
+	    result += basic_func(theta, i);
+	}
+	result *= (-1 / au) * sqrt(dto(u, theta));
+	return result;
+    }
+
+    double basic_func(const double theta, const size_t i)
+    {
+	return clist(i) * cos(i * theta) * plist[i][0];
+    }
+
+    double potential_harmonics_rz(const double r, const double z, const size_t n)
+    {
+	pos ut = r2u({r, z});
+	return potential_harmonics_ut(ut[0], ut[1], n);
+    }
+
+    double potential_ut(const double u, const double theta, char method = 'a')
+    {
+	pos rz = u2r({u, theta});
+	return potential(rz[0], rz[1], method);
+    }
+
+    double
+    potential(const double r, const double x3, char method = 'a')
     {
 	// Two different ways to calculate the potential of a torus.
 	// method 'a' use a single quadrature and has high accuracy and efficiency.
@@ -53,6 +154,11 @@ class Torus
 	    result = potential_func2(r, x3);
 	    break;
 	}
+	    // case 'c':
+	    // {
+	    //     result = potential_func3(r, x3);
+	    //     break;
+	    // }
 	}
 	return result;
     }
@@ -69,6 +175,51 @@ class Torus
     }
 
   private:
+    sample_vec thetalist, vlist;
+    sample_mat tlist;
+    sample_vec clist;
+    container plist;
+
+    double ftr(const double r, const double z, const double a)
+    {
+	return sqrt(pow((r * r - a * a), 2) + 2 * (r * r + a * a) * z * z + pow(z, 4));
+    }
+
+    double utr(const double r, const double z, const double a)
+    {
+	return (r * r + z * z + a * a) / ftr(r, z, a);
+    }
+
+    double thetatr(const double r, const double z, const double a)
+    {
+	return atan2(2 * a * z, r * r + z * z - a * a);
+    }
+
+    double dtr(const double r, const double z, const double a)
+    {
+	return 2 * a * a / ftr(r, z, a);
+    }
+
+    double dto(const double u, const double theta)
+    {
+	return u - cos(theta);
+    }
+
+    double vto(const double u)
+    {
+	return sqrt(u * u - 1);
+    }
+
+    double rto(const double u, const double theta, const double a)
+    {
+	return a * vto(u) / dto(u, theta);
+    }
+
+    double zto(const double u, const double theta, const double a)
+    {
+	return a * sin(theta) / dto(u, theta);
+    }
+
     double potential_func(const double r, const double x3)
     {
 	// use potential_single_quad to do the quadrature.
@@ -114,7 +265,7 @@ class Torus
 	k_p = sqrt(1 - k * k);
 	phi = asin(abs(z) / q);
 
-	// cout << setprecision(15) << "k: " << k << endl;
+	// cout << setprecision(15) << "theta: " << theta << endl;
 
 	ei1 = ellint_1(k);
 	ei2 = ellint_2(k);
@@ -170,14 +321,14 @@ class Torus
 	return (2 * ellint_1(sqrt(4 * r * (1 + eta) / (pow((1 + eta + r), 2) + pow((x3 - zeta), 2)))) * sqrt(pow((1 + eta), 2) / (pow((1 + eta + r), 2) + pow((x3 - zeta), 2))));
     }
 
-    static double quadrature(Function<double, void> F, double low, double top, char method = 'a')
+    static double quadrature(Function<double, void> F, double low, double top, char method = 'b')
     {
 	double result, abserr, epsabs = 1e-10, epsrel = 0;
 	switch (method)
 	{
 	case 'a':
 	{
-		//do the quadrature with quadpackpp.
+	    //do the quadrature with quadpackpp.
 	    size_t limit = 128, m_deg = 10;
 	    Workspace<double> Work(limit, m_deg);
 	    int status = 0;
@@ -194,7 +345,7 @@ class Torus
 	}
 	case 'b':
 	{
-		//do the quadrature with gsl_integration.
+	    //do the quadrature with gsl_integration.
 	    gsl_integration_workspace *w = gsl_integration_workspace_alloc(5000);
 	    gsl_function Func;
 	    Func.function = F.function_;
@@ -202,18 +353,26 @@ class Torus
 
 	    struct f_params *value = (struct f_params *)Func.params;
 	    double r0 = value->r0, x3 = value->x3;
-	    double singular = asin(x3 / r0);
-	    double pts[] = {low, singular, top};
-	    size_t npts = 3;
 
-	    gsl_integration_qagp(&Func, pts, npts, epsabs, epsrel, 5000,
-				 w, &result, &abserr);
+	    if (abs(x3) <= r0)
+	    {
+		double singular = asin(x3 / r0);
+		double pts[] = {low, singular, top};
+		size_t npts = 3;
+		gsl_integration_qagp(&Func, pts, npts, epsabs, epsrel, 5000,
+				     w, &result, &abserr);
+	    }
+	    else
+	    {
+		gsl_integration_qags(&Func, low, top, epsabs, epsrel, 5000,
+				     w, &result, &abserr);
+	    }
 	    gsl_integration_workspace_free(w);
 	    break;
 	}
 	case 'c':
 	{
-		//do the quadrature with gsl_integration but it's for double integral.
+	    //do the quadrature with gsl_integration but it's for double integral.
 	    epsabs = 1e-8;
 	    gsl_integration_workspace *w = gsl_integration_workspace_alloc(5000);
 	    gsl_function Func;
@@ -230,6 +389,11 @@ class Torus
 	//      << "abserr: " << abserr << endl;
 	return result;
 	// return gauss_legendre(128, func_single_quad, &params, 0, 2 * pi);
+    }
+
+    double potential_func3()
+    {
+	return 0;
     }
 };
 
@@ -260,15 +424,37 @@ class Particle
 
 int main()
 {
-    // Torus torus1;
-    // Particle par1({1.25, 0.001, 3, 4, 5});
+    Torus torus;
+
+    Particle par1({1.28, 0.401, 3, 4, 5});
     // double temp = torus1.potential(par1.r, par1.z, 'a');
     // cout << setprecision(15) << temp << endl;
     // temp = torus1.potential(par1.r, par1.z, 'b');
     // cout << setprecision(15) << temp << endl;
     // double m = 0.94;
-    // cout << setprecision(15) << ceik(m * m) - ellint_1(m) << endl;
 
-	container cc = zonal_toroidal_harmonics(1.5,1024);
-	cout << setprecision(20) << cc[1024][1] << endl;
+    // container rr = ratio_p(1.5, 3.5, 20);
+    // for (auto ele : rr)
+    // {
+    // pos pp = torus.r2u({1.25, 0.0});
+
+    // cout << pp[0] << endl
+    //  << pp[1] << endl;
+
+    torus.sampling();
+    torus.dct();
+
+	double v1,v2;
+    const clock_t start = clock();
+	for (size_t i = 0; i < 1000; i++)
+	{
+	//  v1 = torus.potential_harmonics_rz(par1.r, par1.z, 60);
+    v2 = torus.potential(par1.r, par1.z);
+	}
+
+
+    cout << endl
+	 << "Cpu Time: " << static_cast<double>(clock() - start) / CLOCKS_PER_SEC << endl;
+    cout << setprecision(15) << v1 << endl
+	 << v2 << endl;
 }

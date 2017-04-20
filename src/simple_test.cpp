@@ -1,36 +1,25 @@
-#include <iostream>
-#include <iomanip>
-#include <string>
+#include <fftw3.h>
 #include <vector>
-#include <numeric>
-#include <boost/array.hpp>
-#include <eigen3/Eigen/Dense>
-#include <cmath>
-#include <cstdlib>
-#include <quadpackpp/workspace.hpp>
-
-using namespace Eigen;
-using namespace std;
-/* logarithmic.cpp
- */
-
-typedef double Real;
-
-#define ABS(x) (((x) < Real(0)) ? -(x) : (x))
-
-Real integrand(Real x, Real *alpha)
-{
-    return pow(x, *alpha) * log(1 / x);
+void dump_vector(int n, double* vec) {
+    for(int i = 0; i < n; i++)
+        printf("%f ", vec[i]);
+    printf("\n");
 }
-
-Real exact(Real alpha)
+int main()
 {
-    return pow(alpha + 1, -2);
-}
-
-int main(int argc, char **argv)
-{
-
-
+    std::vector<double> p = {1, 1, 1, 2,5};
+	double* a = &p[0];
+    // double a[] = {1, 1, 1, 2,5};
+    double b[] = {0, 0, 0, 0,5};
+    printf("Original vector\n");
+    dump_vector(5, a);
+    fftw_plan plan = fftw_plan_r2r_1d(5, a, a, FFTW_REDFT10, FFTW_ESTIMATE);
+    fftw_execute(plan);
+    printf("DCT\n");
+    dump_vector(5, a);
+    fftw_plan plani = fftw_plan_r2r_1d(5, a, a, FFTW_REDFT01, FFTW_ESTIMATE);
+    fftw_execute(plani);
+    printf("IDCT\n");
+    dump_vector(5, a);
     return 0;
 }

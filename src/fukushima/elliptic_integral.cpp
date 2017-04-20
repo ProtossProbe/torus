@@ -456,9 +456,8 @@ container zonal_toroidal_harmonics_scale(double u, size_t iter)
         b = 1 - d;
         f = a * (b * result[n][0] - t * result[n - 1][0]);
         f_p = a * (b * result[n][1] - t * (result[n - 1][1] - 8 * u * t * result[n - 1][0]));
-        result.push_back({f,f_p});
+        result.push_back({f, f_p});
     }
-
     return result;
 }
 
@@ -483,5 +482,30 @@ array_4 zonal_toroidal_harmonics_seed(double u)
     return {f0, f1, f0_p, f1_p};
 }
 
+vector_d h_n(double h, size_t iter)
+{
+    double h_init = 1 / sqrt(h);
+    vector_d result = {h_init};
+    for (size_t n = 0; n < iter; n++)
+    {
+        result.push_back(h * result[n]);
+    }
+    return result;
+}
 
+container ratio_p(double u, double ur, size_t iter)
+{
+    container fu = zonal_toroidal_harmonics_scale(u, iter);
+    container fur = zonal_toroidal_harmonics_scale(ur, iter);
+    vector_d huur = h_n(u / ur, iter);
+    container result;
+    double p, pp;
+    for (size_t n = 0; n < iter; n++)
+    {
+        p = huur[n + 1] * fu[n][0] / fur[n][0];
+        pp = 1 / fur[n][0] * (huur[n + 1] * fu[n][1] + (n + 0.5) * huur[n] * fu[n][0]);
+        result.push_back({p,pp});
+    }
+    return result;
+}
 }
