@@ -1,6 +1,6 @@
 //
 //  torus.hpp
-//  
+//
 //
 //  Created by Protoss Probe on 2017/04/09.
 //  Copyright © 2016-2017年 probe. All rights reserved.
@@ -9,31 +9,29 @@
 #ifndef _TORUS_HPP_
 #define _TORUS_HPP_
 
-#include <iostream>
+#include "fukushima/elliptic_integral.hpp"
+#include "torus.hpp"
 #include <boost/array.hpp>
-#include <string>
-#include <cmath>
 #include <boost/math/special_functions/ellint_1.hpp>
 #include <boost/math/special_functions/ellint_2.hpp>
 #include <boost/math/special_functions/ellint_3.hpp>
 #include <boost/math/special_functions/heuman_lambda.hpp>
+#include <cmath>
 #include <gsl/gsl_integration.h>
-#include "fukushima/elliptic_integral.hpp"
-#include "torus.hpp"
+#include <iostream>
+#include <string>
 
 typedef boost::array<double, 2> pos;
 typedef boost::array<double, 3> vel;
 typedef boost::array<double, 5> state_type5;
 
-struct f_params
-{
+struct f_params {
     double r;
     double x3;
     double r0;
 };
 
-struct f_params2
-{
+struct f_params2 {
     double r;
     double x3;
     double eta;
