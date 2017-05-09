@@ -1,7 +1,7 @@
 #include <fftw3.h>
-#include <vector>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -12,10 +12,9 @@ void dump_vector(int n, double *vec) {
 }
 int main() {
     int n = 6;
-    std::vector<double> p = {1, 1, 1, 2, 5,6};
-    
-    for (auto ele : p)
-    {
+    std::vector<double> p = {1, 1, 1, 2, 5, 6};
+
+    for (auto ele : p) {
         ele /= n;
     };
     double *a = &p[0];

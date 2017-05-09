@@ -10,6 +10,7 @@
 #define _TORUS_HPP_
 
 #include "fukushima/elliptic_integral.hpp"
+#include "poly_grav.hpp"
 #include "torus.hpp"
 #include <boost/array.hpp>
 #include <boost/math/special_functions/ellint_1.hpp>

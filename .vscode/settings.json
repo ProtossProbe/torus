@@ -1,6 +1,12 @@
 {
+    "code-runner.executorMap": {
+        "cpp": "cd $dir && clang++ -std=c++14 -Wall -Wno-missing-braces -Wno-unused-variable -Wno-unused-parameter -Wextra -pthread -lgsl -lgslcblas -lm -lfftw3 $fileName fukushima/elliptic_integral.cpp poly_grav.cpp -o ../bin/$fileNameWithoutExt && ../bin/$fileNameWithoutExt"
+    },
     "files.associations": {
+        "*.dat": "fortran-modern",
+        "*.in": "fortran-modern",
         "*.m": "matlab",
+        "*.vtk": "fortran-modern",
         "cmath": "cpp",
         "iostream": "cpp",
         "ostream": "cpp",
@@ -39,6 +45,7 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "elliptic_integral": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "core": "cpp"
     }
 }

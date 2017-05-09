@@ -19,6 +19,7 @@
 
 #define EIGEN_STACK_ALLOCATION_LIMIT 10000000
 #include "fukushima/elliptic_integral.hpp"
+#include "poly_grav.hpp"
 #include "torus.hpp"
 #include <eigen3/Eigen/Dense>
 #include <fftw3.h>
@@ -29,8 +30,7 @@ using namespace boost::numeric::odeint;
 using namespace Eigen;
 using namespace Elliptic_Integral;
 
-class Torus
-{
+class Torus {
   public:
     Torus() = default;
     ~Torus() = default;
@@ -46,28 +46,23 @@ class Torus
     typedef Matrix<double, Ns, 1> sample_vec;
     typedef Matrix<double, Ns, Ns> sample_mat;
 
-    pos r2u(const pos rz)
-    {
+    pos r2u(const pos rz) {
         return {utr(rz[0], rz[1], au), thetatr(rz[0], rz[1], au)};
     }
 
-    pos u2r(const pos ut)
-    {
+    pos u2r(const pos ut) {
         return {rto(ut[0], ut[1], au), zto(ut[0], ut[1], au)};
     }
 
-    void sampling()
-    {
+    void sampling() {
         double theta, v;
         sample_vec t;
-        for (size_t i = 1; i <= Ns; i++)
-        {
+        for (size_t i = 1; i <= Ns; i++) {
             theta = (2 * i - 1) * pi / (2 * Ns);
             v = potential_ut(ur, theta) / sqrt(dto(ur, theta)) * (-au);
             thetalist(i - 1) = theta;
             vlist(i - 1) = v;
-            for (size_t j = 0; j < Ns; j++)
-            {
+            for (size_t j = 0; j < Ns; j++) {
                 t(j) = cos(j * theta);
             }
             tlist.row(i - 1) = t;
@@ -80,8 +75,7 @@ class Torus
         //      << tlist << endl;
     }
 
-    void dct()
-    {
+    void dct() {
         clist = vlist / (int(Ns));
         double *p = &clist[0];
         fftw_plan plan =
@@ -92,59 +86,49 @@ class Torus
         //      << clist;
     }
 
-    void legendre_ratio(const double u, const size_t n)
-    {
+    void legendre_ratio(const double u, const size_t n) {
         plist = Elliptic_Integral::ratio_p(u, ur, n);
     }
 
     double potential_harmonics_ut(const double u, const double theta,
-                                  const size_t n)
-    {
+                                  const size_t n) {
         legendre_ratio(u, n);
         double result = 0;
-        for (size_t i = 0; i < n; i++)
-        {
+        for (size_t i = 0; i < n; i++) {
             result += basic_func(theta, i);
         }
         result *= (-1 / au) * sqrt(dto(u, theta));
         return result;
     }
 
-    double basic_func(const double theta, const size_t i)
-    {
+    double basic_func(const double theta, const size_t i) {
         return clist(i) * cos(i * theta) * plist[i][0];
     }
 
     double potential_harmonics_rz(const double r, const double z,
-                                  const size_t n)
-    {
+                                  const size_t n) {
         pos ut = r2u({r, z});
         return potential_harmonics_ut(ut[0], ut[1], n);
     }
 
-    double potential_ut(const double u, const double theta, char method = 'a')
-    {
+    double potential_ut(const double u, const double theta, char method = 'a') {
         pos rz = u2r({u, theta});
         return potential(rz[0], rz[1], method);
     }
 
-    double potential(const double r, const double x3, char method = 'a')
-    {
+    double potential(const double r, const double x3, char method = 'a') {
         // Two different ways to calculate the potential of a torus.
         // method 'a' use a single quadrature and has high accuracy and
         // efficiency. method 'b' use a double quadrature and its accuracy and
         // efficiency is low.
 
         double result;
-        switch (method)
-        {
-        case 'a':
-        {
+        switch (method) {
+        case 'a': {
             result = potential_func(r, x3);
             break;
         }
-        case 'b':
-        {
+        case 'b': {
             result = potential_func2(r, x3);
             break;
         }
@@ -157,11 +141,9 @@ class Torus
         return result;
     }
 
-    void test()
-    {
+    void test() {
         double r = 1.25, z = 0.0;
-        struct f_params params
-        {
+        struct f_params params {
             r, z, r0
         };
         cout << "value: " << func_single_quad(asin(z / r0), &params) << endl;
@@ -173,24 +155,20 @@ class Torus
     sample_vec clist;
     container plist;
 
-    double ftr(const double r, const double z, const double a)
-    {
+    double ftr(const double r, const double z, const double a) {
         return sqrt(pow((r * r - a * a), 2) + 2 * (r * r + a * a) * z * z +
                     pow(z, 4));
     }
 
-    double utr(const double r, const double z, const double a)
-    {
+    double utr(const double r, const double z, const double a) {
         return (r * r + z * z + a * a) / ftr(r, z, a);
     }
 
-    double thetatr(const double r, const double z, const double a)
-    {
+    double thetatr(const double r, const double z, const double a) {
         return atan2(2 * a * z, r * r + z * z - a * a);
     }
 
-    double dtr(const double r, const double z, const double a)
-    {
+    double dtr(const double r, const double z, const double a) {
         return 2 * a * a / ftr(r, z, a);
     }
 
@@ -198,22 +176,18 @@ class Torus
 
     double vto(const double u) { return sqrt(u * u - 1); }
 
-    double rto(const double u, const double theta, const double a)
-    {
+    double rto(const double u, const double theta, const double a) {
         return a * vto(u) / dto(u, theta);
     }
 
-    double zto(const double u, const double theta, const double a)
-    {
+    double zto(const double u, const double theta, const double a) {
         return a * sin(theta) / dto(u, theta);
     }
 
-    double potential_func(const double r, const double x3)
-    {
+    double potential_func(const double r, const double x3) {
         // use potential_single_quad to do the quadrature.
         double u_p;
-        if (abs(r) < 1e-12)
-        {
+        if (abs(r) < 1e-12) {
             double lam, k;
             lam = 2 * r0 * sqrt(1 + pow(x3, 2)) / (1 + pow(r0, 2) + pow(x3, 2));
             k = sqrt(2 * lam / (1 + lam));
@@ -221,11 +195,8 @@ class Torus
                    sqrt(1 + pow(r0, 2) / (1 + pow(x3, 2))) *
                    (ellint_2(k) -
                     2 * (1 - pow(k, 2)) / (2 - pow(k, 2)) * ellint_1(k)));
-        }
-        else
-        {
-            struct f_params params
-            {
+        } else {
+            struct f_params params {
                 r, x3, r0
             };
             Function<double, void> F(func_single_quad, &params);
@@ -234,8 +205,7 @@ class Torus
         return u_p;
     }
 
-    static double func_single_quad(double theta, void *params)
-    {
+    static double func_single_quad(double theta, void *params) {
         // Integrand for potential function.
         // variable: theta
         // parameters: r, x3, r0
@@ -260,12 +230,9 @@ class Torus
         ei1_phi = ellint_1(k_p, phi);
         ei2_phi = ellint_2(k_p, phi);
 
-        if (R1 - r > 0)
-        {
+        if (R1 - r > 0) {
             sgn = 1;
-        }
-        else if (R1 - r < 0)
-        {
+        } else if (R1 - r < 0) {
             sgn = -1;
         }
 
@@ -277,19 +244,16 @@ class Torus
         return -result * cos(theta) / (pi * pi * r0);
     }
 
-    double potential_func2(const double r, const double x3)
-    {
+    double potential_func2(const double r, const double x3) {
         // use func_double_quad to do a double quadature
-        struct f_params params
-        {
+        struct f_params params {
             abs(r), x3, r0
         };
         Function<double, void> F(func_double_quad, &params);
         return quadrature(F, -r0, r0, 'c') / (pi * pi * r0 * r0);
     }
 
-    static double func_double_quad(double eta, void *params)
-    {
+    static double func_double_quad(double eta, void *params) {
         struct f_params *value = (struct f_params *)params;
         struct f_params2 params2;
         params2.r = value->r;
@@ -304,8 +268,7 @@ class Torus
         return quadrature(F, -lim, lim, 'c');
     }
 
-    static double func_double_quad2(double zeta, void *params)
-    {
+    static double func_double_quad2(double zeta, void *params) {
         struct f_params2 *value = (struct f_params2 *)params;
         double r = value->r, x3 = value->x3, eta = value->eta, r0 = value->r0;
 
@@ -317,30 +280,23 @@ class Torus
     }
 
     static double quadrature(Function<double, void> F, double low, double top,
-                             char method = 'b')
-    {
+                             char method = 'b') {
         double result, abserr, epsabs = 1e-10, epsrel = 0;
-        switch (method)
-        {
-        case 'a':
-        {
+        switch (method) {
+        case 'a': {
             // do the quadrature with quadpackpp.
             size_t limit = 128, m_deg = 10;
             Workspace<double> Work(limit, m_deg);
             int status = 0;
-            try
-            {
+            try {
                 status = Work.qag(F, low, top, epsabs, epsrel, result, abserr);
-            }
-            catch (const char *reason)
-            {
+            } catch (const char *reason) {
                 cerr << reason << endl;
                 return status;
             }
             break;
         }
-        case 'b':
-        {
+        case 'b': {
             // do the quadrature with gsl_integration.
             gsl_integration_workspace *w =
                 gsl_integration_workspace_alloc(5000);
@@ -351,24 +307,20 @@ class Torus
             struct f_params *value = (struct f_params *)Func.params;
             double r0 = value->r0, x3 = value->x3;
 
-            if (abs(x3) <= r0)
-            {
+            if (abs(x3) <= r0) {
                 double singular = asin(x3 / r0);
                 double pts[] = {low, singular, top};
                 size_t npts = 3;
                 gsl_integration_qagp(&Func, pts, npts, epsabs, epsrel, 5000, w,
                                      &result, &abserr);
-            }
-            else
-            {
+            } else {
                 gsl_integration_qags(&Func, low, top, epsabs, epsrel, 5000, w,
                                      &result, &abserr);
             }
             gsl_integration_workspace_free(w);
             break;
         }
-        case 'c':
-        {
+        case 'c': {
             // do the quadrature with gsl_integration but it's for double
             // integral.
             epsabs = 1e-8;
@@ -393,8 +345,7 @@ class Torus
     double potential_func3() { return 0; }
 };
 
-class Particle
-{
+class Particle {
   public:
     Particle() = default;
     ~Particle() = default;
@@ -413,11 +364,10 @@ class Particle
     vel convert2vel() const { return {r_dot, z_dot, lam_dot}; }
 };
 
-int main()
-{
-    Torus torus;
+int main() {
+    // Torus torus;
 
-    Particle par1({1.25, 0.2, 3, 4, 5});
+    // Particle par1({1.25, 0.2, 3, 4, 5});
     // double temp;
     // temp = torus.potential(par1.r, par1.z, 'a');
     // cout << setprecision(15) << temp << endl;
@@ -433,20 +383,20 @@ int main()
     // cout << pp[0] << endl
     //  << pp[1] << endl;
 
-    torus.sampling();
-    torus.dct();
+    // torus.sampling();
+    // torus.dct();
 
-    double v1, v2;
-    const clock_t start = clock();
-    // for (size_t i = 0; i < 1000; i++)
-    // {
-    v1 = torus.potential_harmonics_rz(par1.r, par1.z, 60);
-    v2 = torus.potential(par1.r, par1.z);
-    // }
+    // double v1, v2;
+    // const clock_t start = clock();
+    // v1 = torus.potential_harmonics_rz(par1.r, par1.z, 60);
+    // v2 = torus.potential(par1.r, par1.z);
 
-    cout << endl
-         << "Cpu Time: "
-         << static_cast<double>(clock() - start) / CLOCKS_PER_SEC << endl;
-    cout << setprecision(15) << v1 << endl
-         << v2 << endl;
+    // cout << setprecision(15) << v1 << endl << v2 << endl;
+    PolyGrav poly;
+    poly.import_3d_obj("../assets/a.obj");
+    cout << poly.vert_n << '\t' << poly.edge_n << '\t' << poly.face_n << endl;
+
+    // cout << endl
+    //      << "Cpu Time: "
+    //      << static_cast<double>(clock() - start) / CLOCKS_PER_SEC << endl;
 }
