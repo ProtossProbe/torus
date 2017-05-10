@@ -392,9 +392,12 @@ int main() {
     // v2 = torus.potential(par1.r, par1.z);
 
     // cout << setprecision(15) << v1 << endl << v2 << endl;
-    PolyGrav poly;
-    poly.import_3d_obj("../assets/a.obj");
-    cout << poly.vert_n << '\t' << poly.edge_n << '\t' << poly.face_n << endl;
+
+    string filename = "examples";
+
+    PolyGrav poly(filename);
+
+    poly.init();
 
     // cout << endl
     //      << "Cpu Time: "

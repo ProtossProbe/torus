@@ -24,22 +24,30 @@
 #include <string>
 #include <vector>
 
-typedef Eigen::Matrix<double, 3, 1> pos_vec;
-typedef Eigen::Matrix<size_t, 3, 1> connect_vec3;
-typedef Eigen::Matrix<size_t, 4, 1> connect_vec4;
-typedef std::vector<pos_vec> points_data;
-typedef std::vector<connect_vec3> polygons3_data;
-typedef std::vector<connect_vec4> polygons4_data;
+typedef boost::array<double, 3> pos3;
+typedef std::vector<Eigen::Vector3d> points_data;
+typedef std::vector<Eigen::Matrix<size_t, 3, 1>> polygons3_data;
+typedef std::vector<Eigen::Matrix<size_t, 4, 1>> polygons4_data;
 
 class Torus;
 class PolyGrav {
   public:
     PolyGrav();
     ~PolyGrav();
+    PolyGrav(std::string dir);
+    std::string dir;
     size_t vert_n, edge_n, face_n;
+    Eigen::Vector3d mc;
+    Eigen::Matrix3d jj;
     points_data points;
     polygons3_data polygons;
+    void init();
+
+  private:
     void import_3d_obj(std::string dir);
+    void export_3d_txt(std::string dir);
+    void calexec(std::string dir);
+    void import_info(std::string dir);
 };
 
 #endif
