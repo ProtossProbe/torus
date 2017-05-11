@@ -6,7 +6,7 @@
     "suppressTaskName": true,
     "tasks": [{
             "taskName": "build",
-            "args": ["-c", "clang-omp++ -fopenmp -g -std=c++14 -Wall -Wno-missing-braces -Wno-unused-variable -Wno-unused-parameter -Wextra -pthread -lgsl -lgslcblas -lm -lfftw3 -o ./bin/run src/torus.cpp src/fukushima/elliptic_integral.cpp"],
+            "args": ["-c", "clang++ -g -std=c++14 -Wall -Wno-missing-braces -Wno-unused-variable -Wno-unused-parameter -Wextra -pthread -lgsl -lgslcblas -lm -lfftw3 src/torus.cpp src/poly_grav.cpp src/fukushima/elliptic_integral.cpp -o ./bin/run "],
             "isBuildCommand": true
         },
         {

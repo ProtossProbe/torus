@@ -115,13 +115,13 @@ void PolyGrav::init() {
     PolyGrav::export_3d_txt("../assets/" + filename + ".txt");
     PolyGrav::calexec("../assets/" + filename + ".txt");
     PolyGrav::import_info("../assets/" + filename + "_info.txt");
-    // cout << "Initialization Completed!\n\n";
-    // cout << "Vertex Number: " << vert_n << "\n\n"
-    //      << "Faces Number: " << face_n << "\n\n";
-    // cout << "Center of Mass: \n"
-    //      << mc << "\n\n"
-    //      << "Inertia Tensor: \n"
-    //      << jj << "\n\n";
+    cout << "Initialization Completed!\n\n";
+    cout << "Vertex Number: " << vert_n << "\n\n"
+         << "Faces Number: " << face_n << "\n\n";
+    cout << "Center of Mass: \n"
+         << mc << "\n\n"
+         << "Inertia Tensor: \n"
+         << jj << "\n\n";
 }
 
 void PolyGrav::principle_axes() {
@@ -132,55 +132,4 @@ void PolyGrav::principle_axes() {
         *it = *it - mc;
         *it = rotmat.transpose() * *it;
     }
-}
-
-double PolyGrav::L_e(double a, double b, double e) {
-    return log((a + b + e) / (a + b - e));
-}
-
-double PolyGrav::S_j(double c1, double c2, double c3) {
-    double c = (c3 - c1 * c2) / (sqrt(1 - c1 * c1) * sqrt(1 - c2 * c2));
-    return acos(c);
-}
-
-double PolyGrav::ccos(Vector3d a, Vector3d b) {
-    double result = a.dot(b);
-    result /= a.norm();
-    result /= b.norm();
-    return result;
-}
-
-double PolyGrav::potential(Vector3d field_p) {
-    double result = 0, E_term = 0, F_term = 0;
-    for (auto polygon : polygons) {
-        Vector3d normal;
-        Matrix3d edges, edges_n, r, p, temp, E_e, F_f;
-        p << points[polygon(0)], points[polygon(1)], points[polygon(2)];
-        temp << field_p, field_p, field_p;
-        r = p - temp;
-        edges << p.col(1) - p.col(0), p.col(2) - p.col(1), p.col(0) - p.col(2);
-        normal = edges.col(0).cross(edges.col(1));
-
-        edges_n << edges.col(0).cross(normal), edges.col(1).cross(normal),
-            edges.col(2).cross(normal);
-        for (size_t i = 0; i < 3; i++) {
-            E_e = normal * edges_n.col(i).transpose();
-            E_term += r.col(i).dot(E_e * r.col(i)) *
-                      PolyGrav::L_e(r.col(i).norm(), r.col((i + 1) % 3).norm(),
-                                    edges.col(i).norm());
-        }
-        Matrix3d F_e = normal * normal.transpose();
-        double c1 = PolyGrav::ccos(r.col(0), r.col(1));
-        double c2 = PolyGrav::ccos(r.col(1), r.col(2));
-        double c3 = PolyGrav::ccos(r.col(2), r.col(0));
-        double S = PolyGrav::S_j(c1, c2, c3) + PolyGrav::S_j(c2, c3, c1) +
-                   PolyGrav::S_j(c3, c1, c2);
-        int sgn;
-        sgn = (r.col(0).dot(normal) > 0) ? 1 : -1;
-        double omega_f = (S - M_PI) * sgn;
-        F_term += r.col(0).dot(F_e * r.col(0)) * omega_f;
-        // cout << E_term << endl << F_term << endl;
-    }
-    result = co * (E_term - F_term);
-    return result;
 }

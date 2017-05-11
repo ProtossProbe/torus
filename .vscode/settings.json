@@ -46,6 +46,7 @@
         "valarray": "cpp",
         "elliptic_integral": "cpp",
         "vector": "cpp",
-        "core": "cpp"
+        "core": "cpp",
+        "dense": "cpp"
     }
 }

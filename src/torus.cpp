@@ -22,6 +22,7 @@
 #include "poly_grav.hpp"
 #include "torus.hpp"
 #include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Eigenvalues>
 #include <fftw3.h>
 
 using namespace std;
@@ -387,7 +388,7 @@ int main() {
     // torus.dct();
 
     // double v1, v2;
-    // const clock_t start = clock();
+
     // v1 = torus.potential_harmonics_rz(par1.r, par1.z, 60);
     // v2 = torus.potential(par1.r, par1.z);
 
@@ -398,8 +399,16 @@ int main() {
     PolyGrav poly(filename);
 
     poly.init();
+    poly.principle_axes();
+    poly.export_3d_txt("../assets/examples_prin.txt", 'd');
 
-    // cout << endl
-    //      << "Cpu Time: "
-    //      << static_cast<double>(clock() - start) / CLOCKS_PER_SEC << endl;
+    const clock_t start = clock();
+    Vector3d pos;
+
+    pos << 1, 2, 4;
+    cout << poly.potential(pos) << endl;
+
+    cout << endl
+         << "Cpu Time: "
+         << static_cast<double>(clock() - start) / CLOCKS_PER_SEC << endl;
 }

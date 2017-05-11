@@ -19,6 +19,7 @@
 #include <boost/math/special_functions/heuman_lambda.hpp>
 #include <cmath>
 #include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Eigenvalues>
 #include <gsl/gsl_integration.h>
 #include <iostream>
 #include <string>
@@ -37,17 +38,25 @@ class PolyGrav {
     PolyGrav(std::string dir);
     std::string dir;
     size_t vert_n, edge_n, face_n;
+    double co = 0.5;
     Eigen::Vector3d mc;
+    Eigen::Vector3d abc;
     Eigen::Matrix3d jj;
+    Eigen::Matrix3d rotmat;
     points_data points;
     polygons3_data polygons;
     void init();
+    void principle_axes();
+    void export_3d_txt(std::string dir, char acc);
+    double potential(Eigen::Vector3d field_p);
 
   private:
     void import_3d_obj(std::string dir);
-    void export_3d_txt(std::string dir);
     void calexec(std::string dir);
     void import_info(std::string dir);
+    double L_e(double a, double b, double e);
+    double S_j(double c1, double c2, double c3);
+    double ccos(Eigen::Vector3d a, Eigen::Vector3d b);
 };
 
 #endif
