@@ -1,8 +1,8 @@
 //
-//  torus.hpp
+//  poly_grav.hpp
 //
 //
-//  Created by Protoss Probe on 2017/04/09.
+//  Created by Protoss Probe on 2017/05/09.
 //  Copyright © 2016-2017年 probe. All rights reserved.
 //
 
@@ -25,10 +25,13 @@
 #include <string>
 #include <vector>
 
-typedef boost::array<double, 3> pos3;
-typedef std::vector<Eigen::Vector3d> points_data;
-typedef std::vector<Eigen::Matrix<size_t, 3, 1>> polygons3_data;
-typedef std::vector<Eigen::Matrix<size_t, 4, 1>> polygons4_data;
+typedef boost::array<double, 3> vec3;
+typedef boost::array<vec3, 3> mat3;
+typedef boost::array<size_t, 3> connect3;
+typedef boost::array<size_t, 4> connect4;
+typedef std::vector<vec3> points_data;
+typedef std::vector<connect3> polygons3_data;
+typedef std::vector<connect4> polygons4_data;
 
 class Torus;
 class PolyGrav {
@@ -39,24 +42,32 @@ class PolyGrav {
     std::string dir;
     size_t vert_n, edge_n, face_n;
     double co = 0.5;
-    Eigen::Vector3d mc;
-    Eigen::Vector3d abc;
-    Eigen::Matrix3d jj;
-    Eigen::Matrix3d rotmat;
+    vec3 mc;
+    vec3 abc;
+    mat3 jj;
+    mat3 rotmat;
     points_data points;
     polygons3_data polygons;
     void init();
     void principle_axes();
     void export_3d_txt(std::string dir, char acc);
-    double potential(Eigen::Vector3d field_p);
+    double potential(vec3 field_p);
 
   private:
     void import_3d_obj(std::string dir);
     void calexec(std::string dir);
     void import_info(std::string dir);
     double L_e(double a, double b, double e);
-    double S_j(double c1, double c2, double c3);
-    double ccos(Eigen::Vector3d a, Eigen::Vector3d b);
+    double ccos(vec3 a, vec3 b);
+    Eigen::Vector3d boost2eigen_vec(vec3 vec);
+    Eigen::Matrix3d boost2eigen_mat(mat3 mat);
+    vec3 eigen2boost_vec(Eigen::Vector3d vec);
+    mat3 eigen2boost_mat(Eigen::Matrix3d mat);
+    double norm(const vec3 &vec);
+    double dot(const vec3 &vec1, const vec3 &vec2);
+    vec3 cross(const vec3 &vec1, const vec3 &vec2);
+    vec3 mul(const mat3 &mat, const vec3 &vec);
+    mat3 outer(const vec3 &vec1, const vec3 &vec2);
 };
 
 #endif
