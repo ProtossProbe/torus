@@ -399,27 +399,31 @@ int main() {
     PolyGrav poly(filename);
 
     poly.init();
+    cout << poly.vert_n << '\t' << poly.face_n << endl;
     poly.principle_axes();
     poly.export_3d_txt("../assets/" + filename + "_prin.txt", 'd');
 
-    const clock_t start = clock();
-    Vector3d pos;
-    double x = 1000;
+    vec3 pos;
+    double x = 1.4;
     double real = -1 / x;
     poly.co = -1 / (4. / 3. * M_PI) * 0.5;
-    pos << x, 0, 0;
+
+    const clock_t start = clock();
+    pos = {{x, 0, 0}};
     // for (double i = 1.1; i < 3.0; i = i + 0.1) {
-    //     pos(0) = i;
+    //     pos[0] = i;
     //     cout << endl;
     //     cout << setprecision(12) << -1 / i << endl;
     //     cout << poly.potential(pos) << endl;
     //     cout << (-1 / i - poly.potential(pos)) / (-1 / i) << endl;
     // }
-    // cout << "Real : " << real << endl;
-    // cout << "Poly Value : " << poly.potential(pos) << endl;
-    // cout << "Ratio : " << real / poly.potential(pos) << endl;
-
+    double value = poly.potential(pos);
     cout << endl
          << "Cpu Time: "
          << static_cast<double>(clock() - start) / CLOCKS_PER_SEC << endl;
+    cout << endl << "------------" << endl;
+    cout << "Real : " << real << endl;
+    cout << "Poly Value : " << value << endl;
+    cout << "Ratio : " << real / value << endl;
+    cout << "------------" << endl;
 }

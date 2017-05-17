@@ -31,7 +31,7 @@ vec3 operator+(const vec3 &a1, const vec3 &a2) {
 vec3 operator-(const vec3 &a1, const vec3 &a2) {
     vec3 a;
     for (size_t i = 0; i < 3; i++)
-        a[i] = a1[i] + a2[i];
+        a[i] = a1[i] - a2[i];
     return a;
 }
 
@@ -76,7 +76,9 @@ PolyGrav::PolyGrav(string dir) : dir(dir){};
 void PolyGrav::import_3d_obj(string dir) {
     // parse .obj file to get vertexs and polygon data
     string data;
-    vec3 temp;
+    vec3 temp, normal, edge_len;
+    mat3 p, edge, F_f;
+    ten3 E_e;
     connect3 temp_c;
     ifstream objfile(dir);
     if (objfile.is_open()) {
@@ -91,18 +93,39 @@ void PolyGrav::import_3d_obj(string dir) {
             } else if (data == "f") {
                 for (size_t i = 0; i < 3; i++) {
                     objfile >> data;
-                    data.resize(data.size() - 2);
                     temp_c[i] = stoi(data) - 1;
                 }
+
+                p = {{points[temp_c[0]], points[temp_c[1]], points[temp_c[2]]}};
+                edge = {{p[1] - p[0], p[2] - p[1], p[0] - p[2]}};
+                edge_len = {{PolyGrav::norm(edge[0]), PolyGrav::norm(edge[1]),
+                             PolyGrav::norm(edge[2])}};
+                for (size_t i = 0; i < 3; i++) {
+                    edge[i] = edge[i] / edge_len[i];
+                }
+
+                normal = PolyGrav::cross(edge[0], edge[1]);
+                normal = normal / PolyGrav::norm(normal);
+                for (size_t i = 0; i < 3; i++) {
+                    E_e[i] = PolyGrav::outer(normal,
+                                             PolyGrav::cross(edge[i], normal));
+                }
+                F_f = PolyGrav::outer(normal, normal);
+
                 polygons.push_back(temp_c);
+                edges.push_back(edge);
+                edges_len.push_back(edge_len);
+                normals.push_back(normal);
+                E_es.push_back(E_e);
+                F_fs.push_back(F_f);
             }
         }
         objfile.close();
-    }
-    vert_n = points.size();
-    face_n = polygons.size();
-    edge_n = vert_n + face_n - 2;
-};
+        vert_n = points.size();
+        face_n = polygons.size();
+        edge_n = vert_n + face_n - 2;
+    };
+}
 
 void PolyGrav::export_3d_txt(string dir, char acc = 'f') {
     ofstream txtfile;
@@ -173,15 +196,14 @@ void PolyGrav::init() {
 }
 
 void PolyGrav::principle_axes() {
-    Matrix3d temp_mat, temp_mat2, rotmat;
+    Matrix3d temp_mat;
     temp_mat = boost2eigen_mat(jj);
     EigenSolver<MatrixXd> es(temp_mat);
-    temp_mat2 = es.eigenvalues().real();
-    abc = eigen2boost_vec(temp_mat2);
-    rotmat = es.eigenvectors().real();
+    abc = eigen2boost_vec(es.eigenvalues().real());
+    mat3 rotmat = eigen2boost_mat(es.eigenvectors().real());
     for (auto it = points.begin(); it != points.end(); ++it) {
         *it = *it - mc;
-        *it = eigen2boost_vec(rotmat.transpose() * boost2eigen_vec(*it));
+        *it = PolyGrav::mul(PolyGrav::transpose(rotmat), *it);
     }
 }
 
@@ -189,64 +211,41 @@ double PolyGrav::L_e(double a, double b, double e) {
     return log((a + b + e) / (a + b - e));
 }
 
-double PolyGrav::ccos(vec3 a, vec3 b) {
-    double result = a.dot(b);
-    result /= a.norm();
-    result /= b.norm();
-    return result;
+double PolyGrav::omega_f(mat3 r, vec3 r_len) {
+    double y = PolyGrav::dot(r[0], PolyGrav::cross(r[1], r[2]));
+    double x = 0;
+    x += r_len[0] * r_len[1] * r_len[2];
+    for (size_t i = 0; i < 3; i++) {
+        x += r_len[i] * PolyGrav::dot(r[(i + 1) % 3], r[(i + 2) % 3]);
+    }
+
+    return 2 * atan2(y, x);
 }
 
 double PolyGrav::potential(vec3 field_p) {
     double result = 0, E_term = 0, F_term = 0;
-    int n = 50, i = 0;
-    for (auto polygon : polygons) {
-        vec3 normal;
-        mat3 edges, edges_n, r, p, temp, E_e, F_f;
-        p = {{points[polygon[0]], points[polygon[1]], points[polygon[2]]}};
+    for (size_t n = 0; n < face_n; n++) {
+        mat3 r, p, temp;
+        vec3 r_len;
+        auto polygon = polygons[n];
+        auto edge_len = edges_len[n];
+        auto E_e = E_es[n];
+        auto F_f = F_fs[n];
+        auto normal = normals[n];
+
         temp = {{field_p, field_p, field_p}};
+        p = {{points[polygon[0]], points[polygon[1]], points[polygon[2]]}};
         r = p - temp;
-        edges = {{p[1] - p[0], p[2] - p[1], p[0] - p[2]}};
-        for (size_t i = 0; i < 3; i++) {
-            edges[i] = edges[i] / PolyGrav::norm(edges[i]);
-        }
-        normal = PolyGrav::cross(edges[0], edges[1]);
-
-        edges_n = {{PolyGrav::cross(edges[0], normal),
-                    PolyGrav::cross(edges[1], normal),
-                    PolyGrav::cross(edges[2], normal)}};
+        r_len = {
+            {PolyGrav::norm(r[0]), PolyGrav::norm(r[1]), PolyGrav::norm(r[2])}};
 
         for (size_t i = 0; i < 3; i++) {
-            E_e = PolyGrav::outer(normal, edges_n[i]);
-            E_term += r.col(i).dot(E_e * r.col(i)) *
-                      PolyGrav::L_e(r.col(i).norm(), r.col((i + 1) % 3).norm(),
-                                    edges.col(i).norm());
-        }
-        mat3 F_e = normal * normal.transpose();
-        double c1 = PolyGrav::ccos(r.col(0), r.col(1));
-        double c2 = PolyGrav::ccos(r.col(1), r.col(2));
-        double c3 = PolyGrav::ccos(r.col(2), r.col(0));
-        double c4 = r.col(0).dot(r.col(1).cross(r.col(2))) /
-                    (r.col(0).norm() * r.col(1).norm() * r.col(2).norm());
-        double cc = (1 + c1) * (1 + c2) * (1 + c3);
-
-        double cosomega = 1 - c4 * c4 / cc;
-        double sinomega = (1 + c1 + c2 + c3) / cc * abs(c4);
-        int sgn;
-        sgn = (r.col(0).dot(normal) > 0) ? 1 : -1;
-        double omega_f = 2 * atan2(1 - cosomega, sinomega) * sgn;
-        F_term += r.col(0).dot(F_e * r.col(0)) * omega_f;
-
-        if (i % n == 0) {
-            // cout << E_term << endl;
-            // cout << F_term << endl;
-            // cout << r.col(0).dot(F_e * r.col(0)) << endl;
-            // cout << cosomega << '\t' << sinomega << endl;
-            // cout << omega_f << endl;
-            // cout << endl;
+            E_term += PolyGrav::dot(r[i], PolyGrav::mul(E_e[i], r[i])) *
+                      PolyGrav::L_e(r_len[i], r_len[(i + 1) % 3], edge_len[i]);
         }
 
-        // cout << setprecision(8) << E_term << endl << F_term << endl;
-        i++;
+        double omega_f = PolyGrav::omega_f(r, r_len);
+        F_term += PolyGrav::dot(r[0], PolyGrav::mul(F_f, r[0])) * omega_f;
     }
     result = co * (E_term - F_term);
     return result;
@@ -320,4 +319,15 @@ mat3 PolyGrav::outer(const vec3 &vec1, const vec3 &vec2) {
             output[i][j] = vec1[i] * vec2[j];
         }
     }
+    return output;
+}
+
+mat3 PolyGrav::transpose(const mat3 &mat) {
+    mat3 output;
+    for (size_t i = 0; i < 3; i++) {
+        for (size_t j = 0; j < 3; j++) {
+            output[i][j] = mat[j][i];
+        }
+    }
+    return output;
 }

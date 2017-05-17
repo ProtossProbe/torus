@@ -27,9 +27,13 @@
 
 typedef boost::array<double, 3> vec3;
 typedef boost::array<vec3, 3> mat3;
+typedef boost::array<mat3, 3> ten3;
 typedef boost::array<size_t, 3> connect3;
 typedef boost::array<size_t, 4> connect4;
 typedef std::vector<vec3> points_data;
+typedef std::vector<vec3> normals_data;
+typedef std::vector<mat3> edges_data;
+typedef std::vector<ten3> tensors_data;
 typedef std::vector<connect3> polygons3_data;
 typedef std::vector<connect4> polygons4_data;
 
@@ -48,6 +52,12 @@ class PolyGrav {
     mat3 rotmat;
     points_data points;
     polygons3_data polygons;
+    edges_data edges;
+    points_data edges_len;
+    normals_data normals;
+    tensors_data E_es;
+    edges_data F_fs;
+
     void init();
     void principle_axes();
     void export_3d_txt(std::string dir, char acc);
@@ -58,7 +68,7 @@ class PolyGrav {
     void calexec(std::string dir);
     void import_info(std::string dir);
     double L_e(double a, double b, double e);
-    double ccos(vec3 a, vec3 b);
+    double omega_f(mat3 r, vec3 r_len);
     Eigen::Vector3d boost2eigen_vec(vec3 vec);
     Eigen::Matrix3d boost2eigen_mat(mat3 mat);
     vec3 eigen2boost_vec(Eigen::Vector3d vec);
@@ -68,6 +78,7 @@ class PolyGrav {
     vec3 cross(const vec3 &vec1, const vec3 &vec2);
     vec3 mul(const mat3 &mat, const vec3 &vec);
     mat3 outer(const vec3 &vec1, const vec3 &vec2);
+    mat3 transpose(const mat3 &mat);
 };
 
 #endif
