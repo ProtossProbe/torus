@@ -86,7 +86,6 @@ class Torus {
         // cout << setprecision(15) << "c: " << endl
         //      << clist;
     }
-
     void legendre_ratio(const double u, const size_t n) {
         plist = Elliptic_Integral::ratio_p(u, ur, n);
     }
@@ -399,12 +398,12 @@ int main() {
     PolyGrav poly(filename);
 
     poly.init();
-    cout << poly.vert_n << '\t' << poly.face_n << endl;
+    cout << poly.vert_n << '\t' << poly.face_n << '\t' << poly.edge_n << endl;
     poly.principle_axes();
     poly.export_3d_txt("../assets/" + filename + "_prin.txt", 'd');
 
     vec3 pos;
-    double x = 1.4;
+    double x = 1.1;
     double real = -1 / x;
     poly.co = -1 / (4. / 3. * M_PI) * 0.5;
 

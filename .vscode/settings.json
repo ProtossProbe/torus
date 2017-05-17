@@ -1,6 +1,6 @@
 {
     "code-runner.executorMap": {
-        "cpp": "cd $dir && clang++ -std=c++14 -Wall -Wno-missing-braces -Wno-unused-variable -Wno-unused-parameter -Wextra -pthread -lgsl -lgslcblas -lm -lfftw3 $fileName poly_grav.cpp fukushima/elliptic_integral.cpp -o  ../bin/$fileNameWithoutExt && ../bin/$fileNameWithoutExt"
+        "cpp": "cd $dir && clang++ -std=c++14 -Wall -Wno-missing-braces -Wno-unused-variable -Wno-unused-parameter -Wextra -pthread -lgsl -lgslcblas -lm -lfftw3 $fileName fukushima/elliptic_integral.cpp poly_grav.cpp -o  ../bin/$fileNameWithoutExt && ../bin/$fileNameWithoutExt"
     },
     "files.associations": {
         "*.dat": "fortran-modern",

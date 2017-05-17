@@ -1,0 +1,22 @@
+# Created with the Wolfram Language for Students - Personal Use Only : www.wolfram.com
+mtllib a.obj.mtl
+
+# 4 vertex positions
+v  0.0 0.0 0.0
+v  5.0 0.0 0.0
+v  0.0 4.0 0.0
+v  0.0 0.0 3.0
+
+# 0 UV coordinates
+
+# 0 vertex normals
+
+# Mesh '<STL_BINARY>' with 4 faces
+g <STL_BINARY>
+usemtl DefaultMaterial
+f  1// 4// 3//
+f  4// 1// 2//
+f  3// 2// 1//
+f  2// 3// 4//
+
+

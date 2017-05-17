@@ -28,14 +28,14 @@
 typedef boost::array<double, 3> vec3;
 typedef boost::array<vec3, 3> mat3;
 typedef boost::array<mat3, 3> ten3;
+typedef boost::array<size_t, 2> connect2;
 typedef boost::array<size_t, 3> connect3;
 typedef boost::array<size_t, 4> connect4;
-typedef std::vector<vec3> points_data;
-typedef std::vector<vec3> normals_data;
-typedef std::vector<mat3> edges_data;
-typedef std::vector<ten3> tensors_data;
-typedef std::vector<connect3> polygons3_data;
-typedef std::vector<connect4> polygons4_data;
+typedef std::vector<double> val_data;
+typedef std::vector<vec3> vec_data;
+typedef std::vector<connect3> connect3_data;
+typedef std::vector<connect4> connect4_data;
+typedef std::vector<mat3> mat3_data;
 
 class Torus;
 class PolyGrav {
@@ -50,16 +50,18 @@ class PolyGrav {
     vec3 abc;
     mat3 jj;
     mat3 rotmat;
-    points_data points;
-    polygons3_data polygons;
-    edges_data edges;
-    points_data edges_len;
-    normals_data normals;
-    tensors_data E_es;
-    edges_data F_fs;
+    vec_data points;
+    connect3_data polygons;
+    connect4_data edges;
+    mat3_data edges_vec;
+    val_data edges_len;
+    vec_data normals;
+    mat3_data E_es;
+    mat3_data F_fs;
 
     void init();
     void principle_axes();
+    void get_edges_info();
     void export_3d_txt(std::string dir, char acc);
     double potential(vec3 field_p);
 
@@ -67,6 +69,7 @@ class PolyGrav {
     void import_3d_obj(std::string dir);
     void calexec(std::string dir);
     void import_info(std::string dir);
+    int find_common_edge(connect2 con, size_t i);
     double L_e(double a, double b, double e);
     double omega_f(mat3 r, vec3 r_len);
     Eigen::Vector3d boost2eigen_vec(vec3 vec);
